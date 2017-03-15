@@ -8,6 +8,15 @@ from PIL import Image
 from scrapy.downloadermiddlewares.redirect import RedirectMiddleware
 
 class ThreatDefenceRedirectMiddleware(RedirectMiddleware):
+    def __init__(self, settings):
+        super().__init__(settings)
+
+        # start xvfb to support headless scraping
+        if 'linux' in sys.platform:
+            dryscrape.start_xvfb()
+
+        self.dryscrape_session = dryscrape.Session(base_url='http://zipru.to')
+
     def _redirect(self, redirected, request, spider, reason):
         # act normally if this isn't a threat defense redirect
         if not self.is_threat_defense_url(redirected.url):
