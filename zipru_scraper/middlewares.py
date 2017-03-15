@@ -57,3 +57,40 @@ class ThreatDefenceRedirectMiddleware(RedirectMiddleware):
                 return self.dryscrape_session.url()
         logger.error(f'Maybe {self.dryscrape_session.url()} isn\'t a redirect URL?')
         raise Exception('Timed out on the zipru redirect page.')
+
+    def solve_captcha(self, img, width=1280, height=800):
+        # take a screenshot of the page
+        self.dryscrape_session.set_viewport_size(width, height)
+        filename = tempfile.mktemp('.png')
+        self.dryscrape_session.render(filename, width, height)
+
+        # inject javascript to find the bounds of the captcha
+        js = 'document.querySelector("img[src *= captcha]").getBoundingClientRect()'
+        rect = self.dryscrape_session.eval_script(js)
+        box = (int(rect['left']), int(rect['top']), int(rect['right']), int(rect['bottom']))
+
+        # solve the captcha in the screenshot
+        image = Image.open(filename)
+        os.unlink(filename)
+        captcha_image = image.crop(box)
+        captcha = pytesseract.image_to_string(captcha_image)
+        logger.debug(f'Solved the Zipru captcha: "{captcha}"')
+
+        # submit the captcha
+        input = self.dryscrape_session.xpath('//input[@id = "solve_string"]')[0]
+        input.set(captcha)
+        button = self.dryscrape_session.xpath('//button[@id = "button_submit"]')[0]
+        url = self.dryscrape_session.url()
+        button.click()
+
+        # try again if it we redirect to a threat defense URL
+        if self.is_threat_defense_url(self.wait_for_redirect(url)):
+            return self.bypass_threat_defense()
+
+        # otherwise return the cookies as a dict
+        cookies = {}
+        for cookie_string in self.dryscrape_session.cookies():
+            if 'domain=zipru.to' in cookie_string:
+                key, value = cookie_string.split(';')[0].split('=')
+                cookies[key] = value
+        return cookies
