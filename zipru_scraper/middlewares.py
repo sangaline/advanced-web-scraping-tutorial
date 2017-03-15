@@ -16,6 +16,10 @@ class ThreatDefenceRedirectMiddleware(RedirectMiddleware):
             dryscrape.start_xvfb()
 
         self.dryscrape_session = dryscrape.Session(base_url='http://zipru.to')
+        for key, value in settings['DEFAULT_REQUEST_HEADERS'].items():
+            # seems to be a bug with how webkit-server handles accept-encoding
+            if key.lower() != 'accept-encoding':
+                self.dryscrape_session.set_header(key, value)
 
     def _redirect(self, redirected, request, spider, reason):
         # act normally if this isn't a threat defense redirect
