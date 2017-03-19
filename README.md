@@ -1,6 +1,6 @@
 # Advanced Web Scraping Tutorial Project
 
-*This repository is a companion to the article [Advanced Web Scraping: Bypassing captcha, "403 Forbidden," and more](http://sangaline.com/post/advanced-web-scraping).
+*This repository is a companion to the article [Advanced Web Scraping: Bypassing captcha, "403 Forbidden," and more](http://sangaline.com/post/advanced-web-scraping-tutorial).
 Please refer to the article for further details.*
 
 This is a [scrapy](https://scrapy.org/) web scraper for the fictional Zipru torrent site.
